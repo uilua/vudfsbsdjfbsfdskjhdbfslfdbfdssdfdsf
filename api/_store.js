@@ -11,8 +11,7 @@ const KV_URL = firstEnv(
   "UPSTASH_REDIS_REST_KV_URL",
   "UPSTASH_REDIS_REST_KV_REST_API_URL",
   "STORAGE_REST_API_URL",
-  "STORAGE_REST_URL",
-  "STORAGE_URL"
+  "STORAGE_REST_URL"
 );
 
 const KV_TOKEN = firstEnv(
@@ -32,6 +31,10 @@ const VERIFIED_KEY = "vant:verified";
 async function kvRequest(command, ...args) {
   if (!KV_URL || !KV_TOKEN) {
     throw new Error("KV storage is not configured on Vercel. Set KV_* or UPSTASH_* or STORAGE_* env vars.");
+  }
+
+  if (KV_URL.startsWith("redis://") || KV_URL.startsWith("rediss://")) {
+    throw new Error("Invalid KV URL. Use Upstash REST URL (https://...) not Redis URL (rediss://...).");
   }
 
   const response = await fetch(`${KV_URL}/${command}/${args.map(encodeURIComponent).join("/")}`, {
