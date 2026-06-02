@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vant bloxflip predicator</title>
+  <style>
+    :root {
+      --bg: #060606;
+      --panel: #101010;
+      --panel-2: #141414;
+      --text: #f4f4f4;
+      --muted: #9b9b9b;
+      --line: #2a2a2a;
+      --accent: #ffffff;
+      --danger: #d55050;
+      --glow: 0 10px 40px rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Inter, Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.06), transparent 35%),
+        radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.04), transparent 40%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: min(780px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(145deg, var(--panel), var(--panel-2));
+      box-shadow: var(--glow);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title {
+      font-size: clamp(1rem, 2.2vw, 1.3rem);
+      text-transform: lowercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .content {
+      padding: 28px 24px;
+    }
+
+    .hero {
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.3rem, 3vw, 2rem);
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .hero p {
+      color: var(--muted);
+      max-width: 60ch;
+      line-height: 1.5;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    input {
+      flex: 1 1 320px;
+      background: #080808;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 14px 14px;
+      font-size: 0.98rem;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #5a5a5a;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #0a0a0a;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--text);
+    }
+
+    button.warn {
+      background: transparent;
+      color: var(--danger);
+      border-color: rgba(213, 80, 80, 0.45);
+    }
+
+    .admin-layout {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(0, 0, 0, 0.25);
+      min-height: 280px;
+    }
+
+    .panel h3 {
+      margin-bottom: 12px;
+      font-size: 0.96rem;
+      color: #e3e3e3;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #0b0b0b;
+    }
+
+    .username {
+      font-weight: 600;
+      color: #ededed;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.92rem;
+    }
+
+    .mini-btn {
+      padding: 7px 10px;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      min-width: 72px;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+    }
+
+    .modal {
+      width: min(560px, 100%);
+      background: linear-gradient(165deg, #111, #090909);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--glow);
+    }
+
+    .modal h2 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    .token-box {
+      background: #050505;
+      border: 1px solid #3b3b3b;
+      border-radius: 12px;
+      padding: 12px;
+      color: #f3f3f3;
+      margin-bottom: 14px;
+      word-break: break-word;
+      font-family: Consolas, monospace;
+      font-size: 0.95rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 720px) {
+      .admin-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="header">
+      <div class="title">vant bloxflip predicator</div>
+      <div class="pill" id="mode-pill">user mode</div>
+    </div>
+
+    <section class="content" id="user-view">
+      <div class="hero">
+        <h1>Roblox Verification</h1>
+        <p>Enter your Roblox username to start verification. You will wait for admin to assign a custom bio code, then follow that exact instruction.</p>
+      </div>
+
+      <div class="input-row">
+        <input id="username-input" type="text" placeholder="Enter Roblox username..." autocomplete="off" />
+        <button id="submit-user">Continue</button>
+      </div>
+    </section>
+
+    <section class="content" id="admin-view" style="display: none;">
+      <div class="hero">
+        <h1>Admin Panel</h1>
+        <p>Manage verification queue and approve users who have completed the bio token step.</p>
+      </div>
+
+      <div class="input-row" style="margin-bottom: 14px;">
+        <button class="ghost" id="back-user">Back to User View</button>
+      </div>
+
+      <div class="admin-layout" id="admin-layout">
+        <div class="panel">
+          <h3>Pending Verification</h3>
+          <div class="list" id="pending-list"></div>
+        </div>
+        <div class="panel">
+          <h3>Verified Users</h3>
+          <div class="list" id="verified-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="modal-overlay">
+    <div class="modal">
+      <h2 id="modal-title"></h2>
+      <p id="modal-text"></p>
+      <div class="token-box" id="modal-token" style="display: none;"></div>
+      <input id="modal-input" type="text" placeholder="" style="display: none; margin-bottom: 14px;" />
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_TRIGGER = "vantadmin111222";
+
+    const el = {
+      userView: document.getElementById("user-view"),
+      adminView: document.getElementById("admin-view"),
+      adminLayout: document.getElementById("admin-layout"),
+      modePill: document.getElementById("mode-pill"),
+      usernameInput: document.getElementById("username-input"),
+      submitUser: document.getElementById("submit-user"),
+      backUser: document.getElementById("back-user"),
+      pendingList: document.getElementById("pending-list"),
+      verifiedList: document.getElementById("verified-list"),
+      overlay: document.getElementById("modal-overlay"),
+      modalTitle: document.getElementById("modal-title"),
+      modalText: document.getElementById("modal-text"),
+      modalToken: document.getElementById("modal-token"),
+      modalActions: document.getElementById("modal-actions"),
+      modalInput: document.getElementById("modal-input")
+    };
+
+    const state = { pending: [], verified: [] };
+    let currentUserSession = "";
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Request failed");
+      }
+      return data;
+    }
+
+    async function refreshState() {
+      const fresh = await api("/api/state");
+      state.pending = Array.isArray(fresh.pending) ? fresh.pending : [];
+      state.verified = Array.isArray(fresh.verified) ? fresh.verified : [];
+    }
+
+    function openModal({ title, text, token = "", inputConfig = null, actions = [] }) {
+      el.modalTitle.textContent = title;
+      el.modalText.textContent = text;
+
+      if (token) {
+        el.modalToken.style.display = "block";
+        el.modalToken.textContent = token;
+      } else {
+        el.modalToken.style.display = "none";
+        el.modalToken.textContent = "";
+      }
+
+      if (inputConfig) {
+        el.modalInput.style.display = "block";
+        el.modalInput.placeholder = inputConfig.placeholder || "Type here...";
+        el.modalInput.value = inputConfig.value || "";
+      } else {
+        el.modalInput.style.display = "none";
+        el.modalInput.placeholder = "";
+        el.modalInput.value = "";
+      }
+
+      el.modalActions.innerHTML = "";
+      actions.forEach((action) => {
+        const btn = document.createElement("button");
+        btn.className = action.className || "";
+        btn.textContent = action.label;
+        btn.onclick = () => {
+          if (typeof action.onClick === "function") action.onClick(el.modalInput.value.trim());
+        };
+        el.modalActions.appendChild(btn);
+      });
+
+      el.overlay.style.display = "flex";
+    }
+
+    function closeModal() {
+      el.overlay.style.display = "none";
+    }
+
+    function setMode(mode) {
+      const isAdmin = mode === "admin";
+      el.userView.style.display = isAdmin ? "none" : "block";
+      el.adminView.style.display = isAdmin ? "block" : "none";
+      el.adminLayout.style.display = isAdmin ? "grid" : "none";
+      el.modePill.textContent = isAdmin ? "admin mode" : "user mode";
+      if (isAdmin) renderAdmin();
+    }
+
+    async function addPendingUser(username) {
+      const result = await api("/api/pending", {
+        method: "POST",
+        body: JSON.stringify({ username })
+      });
+      await refreshState();
+      return result.user || null;
+    }
+
+    async function verifyUser(userId) {
+      await api(`/api/verify/${encodeURIComponent(userId)}`, { method: "POST" });
+      await refreshState();
+      renderAdmin();
+      closeModal();
+    }
+
+    async function assignCodeToUser(userId, codeText) {
+      if (!codeText) return false;
+      await api(`/api/assign-code/${encodeURIComponent(userId)}`, {
+        method: "POST",
+        body: JSON.stringify({ codeText })
+      });
+      await refreshState();
+      renderAdmin();
+      closeModal();
+      return true;
+    }
+
+    function getWaitingUserRecord() {
+      if (!currentUserSession) return null;
+      return state.pending.find((u) => u.username.toLowerCase() === currentUserSession.toLowerCase()) || null;
+    }
+
+    async function markCodeShown(userId) {
+      await api(`/api/mark-shown/${encodeURIComponent(userId)}`, { method: "POST" });
+      await refreshState();
+    }
+
+    function maybeShowAssignedCodeModal() {
+      const user = getWaitingUserRecord();
+      if (!user || !user.codeAssigned || user.codeShownToUser || !user.bioCode) return;
+
+      openModal({
+        title: "Code Ready",
+        text: "Admin has assigned your bio code. Put this exact text in your Roblox bio now:",
+        token: user.bioCode,
+        actions: [{
+          label: "I Added It",
+          onClick: async () => {
+            await markCodeShown(user.id);
+            closeModal();
+          }
+        }]
+      });
+    }
+
+    function renderAdmin() {
+      el.pendingList.innerHTML = "";
+      el.verifiedList.innerHTML = "";
+
+      if (state.pending.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No users are waiting for verification.";
+        el.pendingList.appendChild(empty);
+      } else {
+        state.pending
+          .slice()
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .forEach((user) => {
+            const row = document.createElement("div");
+            row.className = "row";
+
+            const name = document.createElement("div");
+            name.className = "username";
+            name.textContent = user.username;
+
+            const btn = document.createElement("button");
+            btn.className = "mini-btn";
+            btn.textContent = "verify";
+            btn.onclick = () => {
+              openModal({
+                title: "Set Bio Code",
+                text: "Type the exact text this user must place in their Roblox bio. You can set or update it anytime.",
+                inputConfig: {
+                  placeholder: "Example: VANT-BIO-CODE-7829",
+                  value: user.bioCode || ""
+                },
+                actions: [
+                  { label: "Cancel", className: "ghost", onClick: closeModal },
+                  {
+                    label: "Save Code",
+                    onClick: async (inputValue) => {
+                      if (!inputValue) {
+                        openModal({
+                          title: "Code Required",
+                          text: "Please type a code before saving.",
+                          actions: [{ label: "Close", onClick: closeModal }]
+                        });
+                        return;
+                      }
+                      await assignCodeToUser(user.id, inputValue);
+                    }
+                  },
+                  { label: "Complete Verification", onClick: async () => verifyUser(user.id) }
+                ]
+              });
+            };
+
+            row.append(name, btn);
+            el.pendingList.appendChild(row);
+          });
+      }
+
+      if (state.verified.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No verified users yet.";
+        el.verifiedList.appendChild(empty);
+      } else {
+        state.verified
+          .slice()
+          .sort((a, b) => b.verifiedAt - a.verifiedAt)
+          .forEach((user) => {
+            const row = document.createElement("div");
+            row.className = "row";
+
+            const name = document.createElement("div");
+            name.className = "username";
+            name.textContent = user.username;
+
+            const tag = document.createElement("button");
+            tag.className = "mini-btn ghost";
+            tag.textContent = "verified";
+            tag.disabled = true;
+
+            row.append(name, tag);
+            el.verifiedList.appendChild(row);
+          });
+      }
+    }
+
+    async function handleUsernameSubmit() {
+      const input = el.usernameInput.value.trim();
+      if (!input) {
+        openModal({
+          title: "Username Required",
+          text: "Please enter your Roblox username before continuing.",
+          actions: [{ label: "Close", onClick: closeModal }]
+        });
+        return;
+      }
+
+      if (input === ADMIN_TRIGGER) {
+        await refreshState();
+        setMode("admin");
+        el.usernameInput.value = "";
+        return;
+      }
+
+      let created = null;
+      try {
+        created = await addPendingUser(input);
+      } catch (error) {
+        openModal({
+          title: "Unable to Continue",
+          text: error.message || "This username is already pending or verified.",
+          actions: [{ label: "Close", onClick: closeModal }]
+        });
+        return;
+      }
+
+      if (!created) return;
+
+      currentUserSession = created.username;
+      openModal({
+        title: "Waiting for Code",
+        text: "Your request was sent. Waiting for code from admin. This popup will appear with instructions once code is assigned.",
+        actions: [{ label: "Okay", onClick: closeModal }]
+      });
+
+      el.usernameInput.value = "";
+    }
+
+    el.submitUser.addEventListener("click", handleUsernameSubmit);
+    el.usernameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleUsernameSubmit();
+    });
+
+    el.backUser.addEventListener("click", () => setMode("user"));
+    el.overlay.addEventListener("click", (e) => {
+      if (e.target === el.overlay) closeModal();
+    });
+
+    // Check often so users get the code popup once admin assigns it.
+    setInterval(() => {
+      refreshState()
+        .then(() => {
+          maybeShowAssignedCodeModal();
+          if (el.adminView.style.display === "block") renderAdmin();
+        })
+        .catch(() => {});
+    }, 1200);
+
+    refreshState()
+      .then(() => setMode("user"))
+      .catch(() => setMode("user"));
+  </script>
+</body>
+</html>
