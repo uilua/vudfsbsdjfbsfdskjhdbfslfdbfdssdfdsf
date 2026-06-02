@@ -1,12 +1,32 @@
-const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+function firstEnv(...keys) {
+  for (const key of keys) {
+    if (process.env[key]) return process.env[key];
+  }
+  return "";
+}
+
+const KV_URL = firstEnv(
+  "KV_REST_API_URL",
+  "UPSTASH_REDIS_REST_URL",
+  "STORAGE_REST_API_URL",
+  "STORAGE_REST_URL",
+  "STORAGE_URL"
+);
+
+const KV_TOKEN = firstEnv(
+  "KV_REST_API_TOKEN",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "STORAGE_REST_API_TOKEN",
+  "STORAGE_REST_TOKEN",
+  "STORAGE_TOKEN"
+);
 
 const PENDING_KEY = "vant:pending";
 const VERIFIED_KEY = "vant:verified";
 
 async function kvRequest(command, ...args) {
   if (!KV_URL || !KV_TOKEN) {
-    throw new Error("KV storage is not configured on Vercel.");
+    throw new Error("KV storage is not configured on Vercel. Set KV_* or UPSTASH_* or STORAGE_* env vars.");
   }
 
   const response = await fetch(`${KV_URL}/${command}/${args.map(encodeURIComponent).join("/")}`, {
