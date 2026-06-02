@@ -316,6 +316,7 @@
 
   <script>
     const ADMIN_TRIGGER = "vantadmin111222";
+    const LOCAL_STORAGE_KEY = "vant_bloxflip_predicator_static_state";
 
     const el = {
       userView: document.getElementById("user-view"),
@@ -337,6 +338,35 @@
 
     const state = { pending: [], verified: [] };
     let currentUserSession = "";
+    let apiEnabled = true;
+
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (!raw) return { pending: [], verified: [] };
+        const parsed = JSON.parse(raw);
+        return {
+          pending: Array.isArray(parsed.pending) ? parsed.pending : [],
+          verified: Array.isArray(parsed.verified) ? parsed.verified : []
+        };
+      } catch {
+        return { pending: [], verified: [] };
+      }
+    }
+
+    function saveLocalState() {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+        pending: state.pending,
+        verified: state.verified
+      }));
+    }
+
+    function createClientId() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return window.crypto.randomUUID();
+      }
+      return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
 
     async function api(path, options = {}) {
       const response = await fetch(path, {
@@ -351,9 +381,20 @@
     }
 
     async function refreshState() {
-      const fresh = await api("/api/state");
-      state.pending = Array.isArray(fresh.pending) ? fresh.pending : [];
-      state.verified = Array.isArray(fresh.verified) ? fresh.verified : [];
+      if (apiEnabled) {
+        try {
+          const fresh = await api("/api/state");
+          state.pending = Array.isArray(fresh.pending) ? fresh.pending : [];
+          state.verified = Array.isArray(fresh.verified) ? fresh.verified : [];
+          return;
+        } catch {
+          apiEnabled = false;
+        }
+      }
+
+      const local = loadLocalState();
+      state.pending = local.pending;
+      state.verified = local.verified;
     }
 
     function openModal({ title, text, token = "", inputConfig = null, actions = [] }) {
@@ -406,28 +447,89 @@
     }
 
     async function addPendingUser(username) {
-      const result = await api("/api/pending", {
-        method: "POST",
-        body: JSON.stringify({ username })
-      });
-      await refreshState();
-      return result.user || null;
+      if (apiEnabled) {
+        try {
+          const result = await api("/api/pending", {
+            method: "POST",
+            body: JSON.stringify({ username })
+          });
+          await refreshState();
+          return result.user || null;
+        } catch (error) {
+          apiEnabled = false;
+          if (error.message && error.message !== "Failed to fetch") throw error;
+        }
+      }
+
+      const exists = state.pending.some((u) => u.username.toLowerCase() === username.toLowerCase());
+      const alreadyVerified = state.verified.some((u) => u.username.toLowerCase() === username.toLowerCase());
+      if (exists || alreadyVerified) {
+        throw new Error("This username is already pending or verified.");
+      }
+
+      const user = {
+        id: createClientId(),
+        username,
+        bioCode: "",
+        codeAssigned: false,
+        codeShownToUser: false,
+        createdAt: Date.now()
+      };
+      state.pending.push(user);
+      saveLocalState();
+      return user;
     }
 
     async function verifyUser(userId) {
-      await api(`/api/verify/${encodeURIComponent(userId)}`, { method: "POST" });
-      await refreshState();
+      if (apiEnabled) {
+        try {
+          await api(`/api/verify/${encodeURIComponent(userId)}`, { method: "POST" });
+          await refreshState();
+          renderAdmin();
+          closeModal();
+          return;
+        } catch {
+          apiEnabled = false;
+        }
+      }
+
+      const idx = state.pending.findIndex((u) => u.id === userId);
+      if (idx < 0) return;
+      const [user] = state.pending.splice(idx, 1);
+      state.verified.unshift({
+        id: user.id,
+        username: user.username,
+        bioCode: user.bioCode || "",
+        verifiedAt: Date.now()
+      });
+      saveLocalState();
       renderAdmin();
       closeModal();
     }
 
     async function assignCodeToUser(userId, codeText) {
       if (!codeText) return false;
-      await api(`/api/assign-code/${encodeURIComponent(userId)}`, {
-        method: "POST",
-        body: JSON.stringify({ codeText })
-      });
-      await refreshState();
+      if (apiEnabled) {
+        try {
+          await api(`/api/assign-code/${encodeURIComponent(userId)}`, {
+            method: "POST",
+            body: JSON.stringify({ codeText })
+          });
+          await refreshState();
+          renderAdmin();
+          closeModal();
+          return true;
+        } catch {
+          apiEnabled = false;
+        }
+      }
+
+      const user = state.pending.find((u) => u.id === userId);
+      if (!user) return false;
+      user.bioCode = codeText;
+      user.codeAssigned = true;
+      user.codeShownToUser = false;
+      saveLocalState();
       renderAdmin();
       closeModal();
       return true;
@@ -439,8 +541,20 @@
     }
 
     async function markCodeShown(userId) {
-      await api(`/api/mark-shown/${encodeURIComponent(userId)}`, { method: "POST" });
-      await refreshState();
+      if (apiEnabled) {
+        try {
+          await api(`/api/mark-shown/${encodeURIComponent(userId)}`, { method: "POST" });
+          await refreshState();
+          return;
+        } catch {
+          apiEnabled = false;
+        }
+      }
+
+      const user = state.pending.find((u) => u.id === userId);
+      if (!user) return;
+      user.codeShownToUser = true;
+      saveLocalState();
     }
 
     function maybeShowAssignedCodeModal() {
