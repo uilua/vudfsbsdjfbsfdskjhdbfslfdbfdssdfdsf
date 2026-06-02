@@ -350,6 +350,14 @@
       return data;
     }
 
+    function showActionError(error) {
+      openModal({
+        title: "Request Failed",
+        text: (error && error.message) ? error.message : "Something went wrong. Please try again.",
+        actions: [{ label: "Close", onClick: closeModal }]
+      });
+    }
+
     async function refreshState() {
       const fresh = await api("/api/state");
       state.pending = Array.isArray(fresh.pending) ? fresh.pending : [];
@@ -506,10 +514,23 @@
                         });
                         return;
                       }
-                      await assignCodeToUser(user.id, inputValue);
+                      try {
+                        await assignCodeToUser(user.id, inputValue);
+                      } catch (error) {
+                        showActionError(error);
+                      }
                     }
                   },
-                  { label: "Complete Verification", onClick: async () => verifyUser(user.id) }
+                  {
+                    label: "Complete Verification",
+                    onClick: async () => {
+                      try {
+                        await verifyUser(user.id);
+                      } catch (error) {
+                        showActionError(error);
+                      }
+                    }
+                  }
                 ]
               });
             };
